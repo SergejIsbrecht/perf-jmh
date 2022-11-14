@@ -20,13 +20,12 @@ export PROJECT_ROOT=<absolute_path>
 
 ```shell
 native-image \
-    -H:GenerateDebugInfo=1 -H:-DeleteLocalSymbols \
+    -g -H:-DeleteLocalSymbols \
     --initialize-at-build-time=org.openjdk.jmh.infra,org.openjdk.jmh.util.Utils,org.openjdk.jmh.runner.InfraControl,org.openjdk.jmh.runner.InfraControlL0,org.openjdk.jmh.runner.InfraControlL1,org.openjdk.jmh.runner.InfraControlL2,org.openjdk.jmh.runner.InfraControlL3,org.openjdk.jmh.runner.InfraControlL4 \
     --gc=serial \
     --verbose \
     --no-fallback \
     -J-Xmx27g \
-    -H:InitialCollectionPolicy=BySpaceAndTime \
     -H:-SpawnIsolates \
     -H:IncludeResources="$PROJECT_ROOT/build/jmh-generated-resources/META-INF/BenchmarkList" \
     -H:Log=registerResource:verbose \
@@ -105,7 +104,7 @@ sudo sysctl kernel.kptr_restrict=0
 ```
 
 ```shell
-perf record -F 499 --call-graph dwarf -- ./io.sergejisbrecht.ce.java17.amd64 -XX:MaximumHeapSizePercent=75 -XX:+PrintGC -XX:+PrintGCTimeStamps -XX:+ExitOnOutOfMemoryError -Xms10g -Xmx10g -XX:-CollectYoungGenerationSeparately -XX:MaxHeapFree=1g -XX:PercentTimeInIncrementalCollection=90
+perf record -F 999 --call-graph dwarf -- ./io.sergejisbrecht.ce.java17.amd64 -XX:+PrintGC -XX:+PrintGCTimeStamps -XX:+ExitOnOutOfMemoryError -Xms10g -Xmx10g
 ```
 
 ```shell
@@ -113,3 +112,14 @@ perf report
 ```
 
 ![Dwarf Error](./doc/dwarf_error.png)
+
+## JDK
+
+```
+sudo sysctl kernel.perf_event_paranoid=1
+sudo sysctl kernel.kptr_restrict=0
+```
+
+```
+java -XX:TieredStopAtLevel=1 -Xmx1g -Xms1g -Xlog:gc -XX:+UseSerialGC -jar build/libs/perf-jmh-all.jar io.sergejisbrecht.VolatileAtomicBench  -prof async:libPath=/home/user/async-profiler-2.8.3-linux-x64/build/libasyncProfiler.so\;output=flamegraph\;title=test\;threads\;interval=10ms -f 1 -i 5 -wi 2
+```
